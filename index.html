@@ -41,32 +41,29 @@
       position: relative;
     }
 
-    /* เลเยอร์ภาพลอยขึ้นจากด้านล่าง (ตัดพื้นหลังดำออก ไม่ลายตา) */
-    .floating-layer {
+    /* โปรยตามจังหวะ GIF ลดความถี่ลงไม่ให้ตาลาย ตัดพื้นหลังดำออก */
+    .snow-overlay {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 1;
+      z-index: 50;
       overflow: hidden;
-    }
-
-    .float-item {
-      position: absolute;
-      bottom: -80px;
-      width: 52px;
-      height: 52px;
-      object-fit: contain;
-      pointer-events: none;
       mix-blend-mode: screen;
-      animation: floatUp 12s linear infinite;
-      opacity: 0.85;
+      opacity: 0.48;
     }
 
-    @keyframes floatUp {
-      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-      15% { opacity: 0.85; }
-      85% { opacity: 0.85; }
-      100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; }
+    .snow-tile {
+      position: absolute;
+      inset: -100% 0 0 0;
+      background-image: url("https://file.garden/asG8Gt-rqWIpi3II/IMG_4995.gif");
+      background-repeat: repeat;
+      background-size: 420px auto;
+      animation: fallDown 13s linear infinite;
+    }
+
+    @keyframes fallDown {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(50%); }
     }
 
     /* Welcome Gate */
@@ -668,8 +665,10 @@
 </head>
 <body>
 
-  <!-- เลเยอร์ภาพลอยขึ้นจากด้านล่าง -->
-  <div class="floating-layer" id="floatingLayer"></div>
+  <!-- โปรยลงมาตามจังหวะ GIF ลดความถี่ลงไม่ให้ตาลาย -->
+  <div class="snow-overlay" aria-hidden="true">
+    <div class="snow-tile"></div>
+  </div>
 
   <!-- เข้าเว็บเพื่อเล่นเพลง -->
   <div class="enter-gate" id="enterGate" onclick="unlockAudioAndEnter()">
@@ -1110,18 +1109,6 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
-
-    // ลูกเล่นลอยขึ้นจากด้านล่าง (ไม่ลายตา)
-    const floatingBox = document.getElementById("floatingLayer");
-    setInterval(() => {
-      const el = document.createElement("img");
-      el.src = "https://file.garden/asG8Gt-rqWIpi3II/IMG_4995.gif";
-      el.className = "float-item";
-      el.style.left = (Math.random() * 90) + "vw";
-      el.style.animationDuration = (8 + Math.random() * 6) + "s";
-      floatingBox.appendChild(el);
-      setTimeout(() => el.remove(), 14000);
-    }, 1600);
   </script>
 </body>
 </html>
