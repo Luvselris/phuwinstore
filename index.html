@@ -41,35 +41,32 @@
       position: relative;
     }
 
-    /* ลูกเล่นสีขาวโปรยลงมาทั้งจอ ตัดพื้นหลังดำออกด้วย screen blend */
-    .snow-overlay {
+    /* เลเยอร์ภาพลอยขึ้นจากด้านล่าง (ตัดพื้นหลังดำออก ไม่ลายตา) */
+    .floating-layer {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      z-index: 50;
+      z-index: 1;
       overflow: hidden;
-      mix-blend-mode: screen;
-      opacity: 0.72;
     }
 
-    .snow-tile {
+    .float-item {
       position: absolute;
-      inset: -100% 0 0 0;
-      background-image: url("https://file.garden/asG8Gt-rqWIpi3II/IMG_4995.gif");
-      background-repeat: repeat;
-      background-size: 260px auto;
-      animation: fallDown 11s linear infinite;
+      bottom: -80px;
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      animation: floatUp 12s linear infinite;
+      opacity: 0.85;
     }
 
-    .snow-tile.layer-two {
-      background-size: 360px auto;
-      opacity: 0.55;
-      animation: fallDown 16s linear infinite reverse;
-    }
-
-    @keyframes fallDown {
-      0% { transform: translateY(0); }
-      100% { transform: translateY(50%); }
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      15% { opacity: 0.85; }
+      85% { opacity: 0.85; }
+      100% { transform: translateY(-115vh) rotate(360deg); opacity: 0; }
     }
 
     /* Welcome Gate */
@@ -671,11 +668,8 @@
 </head>
 <body>
 
-  <!-- ลูกเล่นสีขาวโปรยลงมาทั้งจอ (ตัดพื้นหลังสีดำออก) -->
-  <div class="snow-overlay" aria-hidden="true">
-    <div class="snow-tile"></div>
-    <div class="snow-tile layer-two"></div>
-  </div>
+  <!-- เลเยอร์ภาพลอยขึ้นจากด้านล่าง -->
+  <div class="floating-layer" id="floatingLayer"></div>
 
   <!-- เข้าเว็บเพื่อเล่นเพลง -->
   <div class="enter-gate" id="enterGate" onclick="unlockAudioAndEnter()">
@@ -730,7 +724,7 @@
       <button type="button" class="tab-btn" onclick="switchTab('contact', this)">Contact</button>
     </div>
 
-    <!-- แท็บ 1: Home (เว้นโพสต์ไว้รอใส่ในหลังบ้าน) -->
+    <!-- แท็บ 1: Home -->
     <div class="tab-content active" id="tab-home">
       <div class="posts-grid" id="postsGrid"></div>
     </div>
@@ -768,7 +762,7 @@
       </div>
     </div>
 
-    <!-- แท็บ 3: Details (เว้นไว้รอใส่ในหลังบ้าน) -->
+    <!-- แท็บ 3: Details -->
     <div class="tab-content" id="tab-details">
       <div class="details-box" id="detailsText"></div>
     </div>
@@ -819,7 +813,6 @@
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ฐานข้อมูลเฉพาะของร้าน phuwin_store (ไม่ซ้ำกับเว็บอื่น)
     const DB_SITE = "phuwin_store_site";
     const DB_FEEDBACK = "phuwin_store_feedback";
     const DB_HL_SLIDES = "phuwin_store_hl_slides";
@@ -1117,6 +1110,18 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;");
     }
+
+    // ลูกเล่นลอยขึ้นจากด้านล่าง (ไม่ลายตา)
+    const floatingBox = document.getElementById("floatingLayer");
+    setInterval(() => {
+      const el = document.createElement("img");
+      el.src = "https://file.garden/asG8Gt-rqWIpi3II/IMG_4995.gif";
+      el.className = "float-item";
+      el.style.left = (Math.random() * 90) + "vw";
+      el.style.animationDuration = (8 + Math.random() * 6) + "s";
+      floatingBox.appendChild(el);
+      setTimeout(() => el.remove(), 14000);
+    }, 1600);
   </script>
 </body>
 </html>
