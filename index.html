@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="pageTitle">phuwin_store</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg-black: #0c0c0e;
+      --card-dark: #16161a;
+      --card-elevated: #1e1e24;
+      --border-dark: #2c2c34;
+      --accent-white: #f4f4f5;
+      --text-main: #f4f4f5;
+      --text-muted: #9ca3af;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Quicksand', 'Mitr', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ลูกเล่นสีขาวโปรยลงมาทั้งจอ ตัดพื้นหลังดำออกด้วย screen blend */
+    .snow-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      overflow: hidden;
+      mix-blend-mode: screen;
+      opacity: 0.72;
+    }
+
+    .snow-tile {
+      position: absolute;
+      inset: -100% 0 0 0;
+      background-image: url("https://file.garden/asG8Gt-rqWIpi3II/IMG_4995.gif");
+      background-repeat: repeat;
+      background-size: 260px auto;
+      animation: fallDown 11s linear infinite;
+    }
+
+    .snow-tile.layer-two {
+      background-size: 360px auto;
+      opacity: 0.55;
+      animation: fallDown 16s linear infinite reverse;
+    }
+
+    @keyframes fallDown {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(50%); }
+    }
+
+    /* Welcome Gate */
+    .enter-gate {
+      position: fixed;
+      inset: 0;
+      background: rgba(12, 12, 14, 0.96);
+      backdrop-filter: blur(10px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+
+    .enter-gate.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .enter-card {
+      background: var(--card-dark);
+      border: 1.5px solid var(--border-dark);
+      border-radius: 26px;
+      padding: 28px 22px;
+      text-align: center;
+      max-width: 320px;
+      width: 86%;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.65);
+    }
+
+    .enter-btn {
+      margin-top: 16px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid #52525b;
+      background: #27272a;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 440px;
+      position: relative;
+      z-index: 2;
+      padding-bottom: 70px;
+    }
+
+    /* แบนเนอร์ */
+    .banner-box {
+      width: 100%;
+      height: 160px;
+      background: #141418;
+      overflow: hidden;
+      position: relative;
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .banner-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* โปรไฟล์และกรอบที่พอดีกัน */
+    .profile-section {
+      padding: 0 18px;
+      margin-top: -54px;
+      position: relative;
+    }
+
+    .profile-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 108px;
+      height: 108px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .avatar-img {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      object-fit: cover;
+      position: relative;
+      z-index: 1;
+      border: 2px solid #18181b;
+      background: #111;
+      display: block;
+    }
+
+    .profile-frame {
+      position: absolute;
+      inset: 0;
+      width: 108px;
+      height: 108px;
+      object-fit: contain;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 10px;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-weight: 700;
+      font-size: 16px;
+      color: #ffffff;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .bio-box {
+      margin-top: 12px;
+    }
+
+    .bio-username {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+    }
+
+    .bio-desc {
+      font-size: 13px;
+      color: #d4d4d8;
+      line-height: 1.65;
+      margin-top: 8px;
+      white-space: pre-line;
+    }
+
+    .music-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 6px 14px;
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 20px;
+      font-size: 12px;
+      color: #e4e4e7;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* ไฮไลท์สตอรี่ */
+    .highlights-scroll {
+      display: flex;
+      gap: 14px;
+      padding: 18px 18px 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .highlights-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .highlight-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .highlight-ring {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      padding: 2px;
+      background: linear-gradient(135deg, #d4d4d8, #52525b);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .highlight-thumb {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--bg-black);
+      background: #111;
+    }
+
+    .highlight-name {
+      font-size: 11px;
+      color: #e4e4e7;
+      max-width: 72px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    /* 4 แท็บเมนู */
+    .tabs-header {
+      display: flex;
+      border-top: 1px solid var(--border-dark);
+      border-bottom: 1px solid var(--border-dark);
+      margin-top: 10px;
+      background: var(--card-dark);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 0;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      border-bottom: 2px solid #ffffff;
+      font-weight: 700;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 16px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* แท็บ 1: Home Grid */
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .post-card {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      background: var(--card-dark);
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border-dark);
+    }
+
+    .post-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* แท็บ 2: Review */
+    .review-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .review-form-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 22px;
+      padding: 16px;
+    }
+
+    .form-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .star-select-box {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .star-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .star-btn svg {
+      width: 26px;
+      height: 26px;
+      fill: #27272a;
+      stroke: #71717a;
+      stroke-width: 1.2;
+      transition: all 0.15s ease;
+    }
+
+    .star-btn.active svg {
+      fill: #ffffff;
+      stroke: #ffffff;
+      transform: scale(1.06);
+    }
+
+    .review-input, .review-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border-dark);
+      outline: none;
+      font-size: 13px;
+      background: #101014;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
+    .review-input:focus, .review-textarea:focus {
+      border-color: #a1a1aa;
+    }
+
+    .review-submit-btn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 16px;
+      border: 1px solid #52525b;
+      background: #27272a;
+      color: #ffffff;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .review-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .review-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .review-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .review-stars-box {
+      display: flex;
+      gap: 3px;
+    }
+
+    .review-stars-box svg {
+      width: 14px;
+      height: 14px;
+      fill: #ffffff;
+    }
+
+    .review-msg {
+      font-size: 12.5px;
+      color: #d4d4d8;
+      margin-top: 6px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    /* แท็บ 3: Details */
+    .details-box {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 22px;
+      padding: 18px;
+      line-height: 1.7;
+      font-size: 13.5px;
+      white-space: pre-line;
+      color: #d4d4d8;
+      min-height: 110px;
+    }
+
+    /* แท็บ 4: Contact */
+    .contact-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .contact-link {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 20px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 14px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .contact-link:active {
+      transform: scale(0.98);
+    }
+
+    .contact-link:hover {
+      border-color: #71717a;
+    }
+
+    /* Story Fullscreen Viewer */
+    .story-modal {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 9999999;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .story-modal.show {
+      display: flex;
+    }
+
+    .story-bars {
+      display: flex;
+      gap: 4px;
+      padding: 12px 14px 6px;
+      z-index: 10;
+    }
+
+    .story-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .story-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: #ffffff;
+      transition: width 0.1s linear;
+    }
+
+    .story-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 14px;
+      z-index: 10;
+    }
+
+    .story-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .story-close {
+      background: none;
+      border: none;
+      color: #ffffff;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .story-body {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .story-body img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+
+    .story-nav-btn {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 40%;
+      z-index: 5;
+    }
+
+    .story-nav-left { left: 0; }
+    .story-nav-right { right: 0; }
+
+    /* Post Modal */
+    .post-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 999999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .post-modal.show {
+      display: flex;
+    }
+
+    .post-modal-card {
+      background: var(--card-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 24px;
+      overflow: hidden;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .post-modal-card img {
+      width: 100%;
+      max-height: 380px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .post-modal-body {
+      padding: 16px;
+    }
+
+    .post-modal-caption {
+      font-size: 13px;
+      color: #d4d4d8;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .post-modal-close {
+      margin-top: 12px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid var(--border-dark);
+      background: #27272a;
+      color: #ffffff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ลูกเล่นสีขาวโปรยลงมาทั้งจอ (ตัดพื้นหลังสีดำออก) -->
+  <div class="snow-overlay" aria-hidden="true">
+    <div class="snow-tile"></div>
+    <div class="snow-tile layer-two"></div>
+  </div>
+
+  <!-- เข้าเว็บเพื่อเล่นเพลง -->
+  <div class="enter-gate" id="enterGate" onclick="unlockAudioAndEnter()">
+    <div class="enter-card">
+      <h2 style="font-size: 18px; color: #ffffff;" id="gateTitle">phuwin_store</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">แตะเพื่อเข้าสู่หน้าร้านและเริ่มฟังเพลง</p>
+      <button type="button" class="enter-btn">ENTER STORE</button>
+    </div>
+  </div>
+
+  <audio id="bgMusic" loop preload="auto" src="https://file.garden/asG8Gt-rqWIpi3II/BABYMONSTER%20-%20'DESERVE'%20M%20V.mp3"></audio>
+
+  <div class="wrapper">
+    <!-- แบนเนอร์ -->
+    <div class="banner-box">
+      <img id="bannerImg" src="https://file.garden/asG8Gt-rqWIpi3II/IMG_4980.jpeg" alt="Banner">
+    </div>
+
+    <!-- ส่วนโปรไฟล์และกรอบ -->
+    <div class="profile-section">
+      <div class="profile-row">
+        <div class="avatar-wrapper">
+          <img id="avatarImg" class="avatar-img" src="https://file.garden/asG8Gt-rqWIpi3II/IMG_4992.jpeg" alt="Profile">
+          <img id="profileFrameImg" class="profile-frame" src="https://file.garden/asG8Gt-rqWIpi3II/6C375541-121C-4D44-A621-003BE1EC19B5.png" alt="Profile Frame">
+        </div>
+        <div class="stats-row">
+          <div class="stat-item"><div class="stat-num" id="postCount">0</div><div class="stat-lbl">โพสต์</div></div>
+          <div class="stat-item"><div class="stat-num" id="highlightCount">1</div><div class="stat-lbl">ไฮไลท์</div></div>
+          <div class="stat-item"><div class="stat-num">100%</div><div class="stat-lbl">รีวิว</div></div>
+        </div>
+      </div>
+
+      <div class="bio-box">
+        <div class="bio-username" id="usernameText">phuwin_store</div>
+        <div class="bio-desc" id="userBio">welcome to phuwin_store
+เช็ครีวิวได้ที่ไฮไลท์ + รีวิวจากลูกค้า</div>
+
+        <div class="music-bar" onclick="toggleMusic()">
+          <span id="musicText">play music</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ไฮไลท์สตอรี่ -->
+    <div class="highlights-scroll" id="highlightsBar"></div>
+
+    <!-- 4 แท็บเมนู -->
+    <div class="tabs-header">
+      <button type="button" class="tab-btn active" onclick="switchTab('home', this)">Home</button>
+      <button type="button" class="tab-btn" onclick="switchTab('review', this)">Review</button>
+      <button type="button" class="tab-btn" onclick="switchTab('details', this)">Details</button>
+      <button type="button" class="tab-btn" onclick="switchTab('contact', this)">Contact</button>
+    </div>
+
+    <!-- แท็บ 1: Home (เว้นโพสต์ไว้รอใส่ในหลังบ้าน) -->
+    <div class="tab-content active" id="tab-home">
+      <div class="posts-grid" id="postsGrid"></div>
+    </div>
+
+    <!-- แท็บ 2: Review -->
+    <div class="tab-content" id="tab-review">
+      <div class="review-section">
+        <div class="review-form-card">
+          <div class="form-title">เขียนรีวิวให้ร้านค้า</div>
+
+          <div class="star-select-box">
+            <button type="button" class="star-btn active" onclick="setStars(1)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+            <button type="button" class="star-btn active" onclick="setStars(2)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+            <button type="button" class="star-btn active" onclick="setStars(3)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+            <button type="button" class="star-btn active" onclick="setStars(4)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+            <button type="button" class="star-btn active" onclick="setStars(5)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            </button>
+          </div>
+
+          <input type="text" id="custName" class="review-input" placeholder="ชื่อของคุณ">
+          <textarea id="custMsg" class="review-textarea" rows="3" placeholder="เขียนข้อความรีวิวได้เลยนะคะ"></textarea>
+          <button type="button" class="review-submit-btn" id="submitReviewBtn" onclick="submitCustomerReview()">ส่งรีวิว</button>
+        </div>
+
+        <div class="review-list" id="feedbackList"></div>
+      </div>
+    </div>
+
+    <!-- แท็บ 3: Details (เว้นไว้รอใส่ในหลังบ้าน) -->
+    <div class="tab-content" id="tab-details">
+      <div class="details-box" id="detailsText"></div>
+    </div>
+
+    <!-- แท็บ 4: Contact -->
+    <div class="tab-content" id="tab-contact">
+      <div class="contact-box" id="contactLinks"></div>
+    </div>
+  </div>
+
+  <!-- Story Fullscreen Viewer -->
+  <div class="story-modal" id="storyModal">
+    <div class="story-bars" id="storyBars"></div>
+    <div class="story-header">
+      <div class="story-user">
+        <span id="storyTitleText">Highlight</span>
+      </div>
+      <button type="button" class="story-close" onclick="closeStory()">×</button>
+    </div>
+    <div class="story-body">
+      <div class="story-nav-btn story-nav-left" onclick="prevStory()"></div>
+      <img id="storyActiveImg" src="" alt="Story Image">
+      <div class="story-nav-btn story-nav-right" onclick="nextStory()"></div>
+    </div>
+  </div>
+
+  <!-- Post Detail Modal -->
+  <div class="post-modal" id="postModal" onclick="closePostModal()">
+    <div class="post-modal-card" onclick="event.stopPropagation()">
+      <img id="postModalImg" src="" alt="Post Image">
+      <div class="post-modal-body">
+        <div class="post-modal-caption" id="postModalCaption"></div>
+        <button type="button" class="post-modal-close" onclick="closePostModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCpAGDSy1NRgmLV_g7qJrCpwOhU9MrfQyY",
+      authDomain: "benefitie.firebaseapp.com",
+      projectId: "benefitie",
+      storageBucket: "benefitie.firebasestorage.app",
+      messagingSenderId: "270365672215",
+      appId: "1:270365672215:web:230d1491091e26ce83ed52"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ฐานข้อมูลเฉพาะของร้าน phuwin_store (ไม่ซ้ำกับเว็บอื่น)
+    const DB_SITE = "phuwin_store_site";
+    const DB_FEEDBACK = "phuwin_store_feedback";
+    const DB_HL_SLIDES = "phuwin_store_hl_slides";
+
+    let currentHighlights = [{ title: "review", cover: "", images: [] }];
+    let currentPosts = [];
+    let activeHighlightIdx = 0;
+    let activeStoryImgIdx = 0;
+    let storyTimer = null;
+    let selectedRating = 5;
+
+    const music = document.getElementById("bgMusic");
+    const musicText = document.getElementById("musicText");
+
+    renderHighlights(currentHighlights);
+    renderPosts(currentPosts);
+    renderContacts([{ title: "line oa", url: "https://lin.ee/ZQkbi0Y" }]);
+
+    db.collection(DB_SITE).doc("config").onSnapshot(async doc => {
+      if (doc.exists) {
+        const d = doc.data();
+        if (d.siteTitle) {
+          document.getElementById("pageTitle").textContent = d.siteTitle;
+          document.getElementById("gateTitle").textContent = d.siteTitle;
+        }
+        if (d.username) document.getElementById("usernameText").textContent = d.username;
+        if (typeof d.bio === "string") document.getElementById("userBio").textContent = d.bio;
+        if (d.bannerImg) document.getElementById("bannerImg").src = d.bannerImg;
+        if (d.profileImg) document.getElementById("avatarImg").src = d.profileImg;
+        if (d.profileFrame) document.getElementById("profileFrameImg").src = d.profileFrame;
+
+        if (d.highlights && Array.isArray(d.highlights)) {
+          const loadedHl = [];
+          for (let i = 0; i < d.highlights.length; i++) {
+            const hl = { ...d.highlights[i] };
+            const slidesSnap = await db.collection(DB_HL_SLIDES).doc(String(i)).collection("images").orderBy("idx", "asc").get();
+            if (!slidesSnap.empty) {
+              hl.images = slidesSnap.docs.map(s => s.data().url);
+            } else if (!hl.images) {
+              hl.images = [];
+            }
+            loadedHl.push(hl);
+          }
+          currentHighlights = loadedHl;
+          document.getElementById("highlightCount").textContent = currentHighlights.length;
+          renderHighlights(currentHighlights);
+        }
+
+        if (d.posts && Array.isArray(d.posts)) {
+          currentPosts = d.posts.filter(p => p && p.image);
+          renderPosts(currentPosts);
+        }
+
+        document.getElementById("detailsText").textContent = d.details || "";
+
+        if (d.contacts && Array.isArray(d.contacts) && d.contacts.length) {
+          renderContacts(d.contacts);
+        }
+
+        if (d.musicUrl && !music.src.endsWith(d.musicUrl)) {
+          music.src = d.musicUrl;
+        }
+      }
+    });
+
+    function unlockAudioAndEnter() {
+      document.getElementById("enterGate").classList.add("hidden");
+      if (music.getAttribute("src")) {
+        music.play().then(() => {
+          musicText.textContent = "pause music";
+        }).catch(() => {});
+      }
+    }
+
+    function toggleMusic() {
+      if (!music.getAttribute("src")) return;
+      if (music.paused) {
+        music.play().catch(() => {});
+        musicText.textContent = "pause music";
+      } else {
+        music.pause();
+        musicText.textContent = "play music";
+      }
+    }
+
+    function renderHighlights(hl) {
+      const bar = document.getElementById("highlightsBar");
+      bar.innerHTML = "";
+      hl.forEach((item, idx) => {
+        const cover = item.cover || (item.images && item.images[0]) || "https://file.garden/asG8Gt-rqWIpi3II/IMG_4992.jpeg";
+        const div = document.createElement("div");
+        div.className = "highlight-item";
+        div.onclick = () => openStory(idx);
+        div.innerHTML = `
+          <div class="highlight-ring"><img class="highlight-thumb" src="${cover}" alt="Highlight"></div>
+          <div class="highlight-name">${escapeHtml(item.title || 'review')}</div>
+        `;
+        bar.appendChild(div);
+      });
+    }
+
+    function renderPosts(posts) {
+      const grid = document.getElementById("postsGrid");
+      grid.innerHTML = "";
+      if (!posts.length) {
+        grid.innerHTML = `<div style="grid-column: span 3; text-align:center; color:var(--text-muted); font-size:13px; padding:32px 10px;">ยังไม่มีโพสต์</div>`;
+        document.getElementById("postCount").textContent = "0";
+        return;
+      }
+      posts.forEach((p) => {
+        const card = document.createElement("div");
+        card.className = "post-card";
+        card.onclick = () => openPostModal(p);
+        card.innerHTML = `<img src="${p.image || ''}" alt="Post">`;
+        grid.appendChild(card);
+      });
+      document.getElementById("postCount").textContent = posts.length;
+    }
+
+    function openPostModal(post) {
+      document.getElementById("postModalImg").src = post.image;
+      document.getElementById("postModalCaption").textContent = post.caption || "";
+      document.getElementById("postModal").classList.add("show");
+    }
+
+    function closePostModal() {
+      document.getElementById("postModal").classList.remove("show");
+    }
+
+    function setStars(val) {
+      selectedRating = val;
+      const btns = document.querySelectorAll('.star-btn');
+      btns.forEach((btn, idx) => {
+        if (idx < val) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+    }
+
+    async function submitCustomerReview() {
+      const name = document.getElementById("custName").value.trim();
+      const msg = document.getElementById("custMsg").value.trim();
+      const btn = document.getElementById("submitReviewBtn");
+
+      if (!name || !msg) {
+        alert("กรุณากรอกชื่อและข้อความรีวิวด้วยนะคะ");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "กำลังส่งรีวิว...";
+      try {
+        await db.collection(DB_FEEDBACK).add({
+          name: name,
+          msg: msg,
+          stars: selectedRating,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("custName").value = "";
+        document.getElementById("custMsg").value = "";
+        setStars(5);
+        alert("ขอบคุณสำหรับรีวิวนะคะ ♡");
+      } catch (e) {
+        alert("เกิดข้อผิดพลาด ลองใหม่อีกครั้งนะคะ");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "ส่งรีวิว";
+      }
+    }
+
+    db.collection(DB_FEEDBACK).orderBy("createdAt", "desc").onSnapshot(snap => {
+      const list = document.getElementById("feedbackList");
+      list.innerHTML = "";
+      if (snap.empty) {
+        list.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:13px; padding:14px;">ยังไม่มีรีวิว</div>`;
+        return;
+      }
+      snap.forEach(doc => {
+        const d = doc.data();
+        const card = document.createElement("div");
+        card.className = "review-card";
+
+        let starsSvg = '';
+        for (let i = 0; i < (d.stars || 5); i++) {
+          starsSvg += `<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+        }
+
+        card.innerHTML = `
+          <div class="review-head">
+            <span class="review-name">${escapeHtml(d.name)}</span>
+            <div class="review-stars-box">${starsSvg}</div>
+          </div>
+          <div class="review-msg">${escapeHtml(d.msg)}</div>
+        `;
+        list.appendChild(card);
+      });
+    });
+
+    function renderContacts(contacts) {
+      const box = document.getElementById("contactLinks");
+      box.innerHTML = "";
+      contacts.forEach(c => {
+        if (!c.url) return;
+        const a = document.createElement("a");
+        a.href = c.url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.className = "contact-link";
+        a.innerHTML = `<span>${escapeHtml(c.title || 'line oa')}</span> <span>→</span>`;
+        box.appendChild(a);
+      });
+    }
+
+    function openStory(idx) {
+      activeHighlightIdx = idx;
+      activeStoryImgIdx = 0;
+      const hl = currentHighlights[idx];
+      if (!hl || !hl.images || !hl.images.length) {
+        alert("ไฮไลท์นี้ยังไม่มีรูปภาพค่ะ");
+        return;
+      }
+      document.getElementById("storyTitleText").textContent = hl.title || 'Highlight';
+      buildStoryBars();
+      showStoryImage();
+      document.getElementById("storyModal").classList.add("show");
+    }
+
+    function buildStoryBars() {
+      const hl = currentHighlights[activeHighlightIdx];
+      const bars = document.getElementById("storyBars");
+      bars.innerHTML = "";
+      hl.images.forEach((_, i) => {
+        const bar = document.createElement("div");
+        bar.className = "story-bar";
+        bar.innerHTML = `<div class="story-bar-fill" id="sbar-${i}"></div>`;
+        bars.appendChild(bar);
+      });
+    }
+
+    function showStoryImage() {
+      clearTimeout(storyTimer);
+      const hl = currentHighlights[activeHighlightIdx];
+      const img = hl.images[activeStoryImgIdx];
+      document.getElementById("storyActiveImg").src = img;
+
+      hl.images.forEach((_, i) => {
+        const fill = document.getElementById(`sbar-${i}`);
+        if (!fill) return;
+        if (i < activeStoryImgIdx) {
+          fill.style.width = "100%";
+        } else if (i === activeStoryImgIdx) {
+          fill.style.width = "0%";
+          setTimeout(() => { fill.style.width = "100%"; }, 50);
+        } else {
+          fill.style.width = "0%";
+        }
+      });
+
+      storyTimer = setTimeout(() => { nextStory(); }, 5000);
+    }
+
+    function nextStory() {
+      const hl = currentHighlights[activeHighlightIdx];
+      if (activeStoryImgIdx < hl.images.length - 1) {
+        activeStoryImgIdx++;
+        showStoryImage();
+      } else {
+        closeStory();
+      }
+    }
+
+    function prevStory() {
+      if (activeStoryImgIdx > 0) {
+        activeStoryImgIdx--;
+        showStoryImage();
+      }
+    }
+
+    function closeStory() {
+      clearTimeout(storyTimer);
+      document.getElementById("storyModal").classList.remove("show");
+    }
+
+    function switchTab(tabId, btnEl) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+      document.getElementById(`tab-${tabId}`).classList.add("active");
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
